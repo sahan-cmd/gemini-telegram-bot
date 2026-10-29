@@ -2,13 +2,16 @@ import os
 import json
 from http.server import BaseHTTPRequestHandler
 import telebot
-from google import genai
+import google.generativeai as genai
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 
+# Gemini configure කිරීම
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel("gemini-1.5-flash")
+
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
-client = genai.Client(api_key=GEMINI_API_KEY)
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -28,14 +31,9 @@ class handler(BaseHTTPRequestHandler):
                     bot.send_chat_action(chat_id, 'typing')
 
                     try:
-                        # Gemini එකෙන් උත්තරය ලබා ගැනීම
-                        response = client.models.generate_content(
-                            model='gemini-1.5-flash',
-                            contents=user_text
-                        )
+                        response = model.generate_content(user_text)
                         bot.send_message(chat_id, response.text)
                     except Exception as gemini_err:
-                        # Gemini Error එකක් ආවොත් ඒක කෙලින්ම Chat එකට එවයි
                         bot.send_message(chat_id, f"⚠️ Gemini Error: {str(gemini_err)}")
 
         except Exception as e:
