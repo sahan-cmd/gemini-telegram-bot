@@ -30,7 +30,7 @@ class handler(BaseHTTPRequestHandler):
                     try:
                         # Gemini එකෙන් උත්තරය ලබා ගැනීම
                         response = client.models.generate_content(
-                            model='gemini-3.8-flash',
+                            model='gemini-1.5-flash',
                             contents=user_text
                         )
                         bot.send_message(chat_id, response.text)
