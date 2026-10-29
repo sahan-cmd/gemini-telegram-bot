@@ -1,44 +1,45 @@
 import os
-import threading
-from flask import Flask
+import json
+from http.server import BaseHTTPRequestHandler
 import telebot
 from google import genai
 
-# Environment Variables
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 client = genai.Client(api_key=GEMINI_API_KEY)
 
-# Render එක Free run වෙන්න අවශ්‍ය Dummy Web Server එක
-app = Flask(__name__)
+class handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            update_dict = json.loads(post_data.decode('utf-8'))
 
-@app.route('/')
-def home():
-    return "Bot is running perfectly!"
+            update = telebot.types.Update.de_json(update_dict)
 
-def run_web():
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
+            if update.message and update.message.text:
+                chat_id = update.message.chat.id
+                user_text = update.message.text
 
-# Telegram Message Handlers
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.reply_to(message, "මම ඔබේ Gemini AI සහයකයා! මගෙන් ඕනෑම දෙයක් අහන්න. 😊")
+                if user_text == "/start":
+                    bot.send_message(chat_id, "මම ඔබේ Gemini AI සහයකයා! මගෙන් ඕනෑම දෙයක් අහන්න. 😊")
+                else:
+                    response = client.models.generate_content(
+                        model='gemini-2.5-flash',
+                        contents=user_text
+                    )
+                    bot.send_message(chat_id, response.text)
+        except Exception as e:
+            pass
 
-@bot.message_handler(func=lambda message: True)
-def handle_message(message):
-    try:
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=message.text
-        )
-        bot.reply_to(message, response.text)
-    except Exception as e:
-        bot.reply_to(message, "කණගාටුයි, පිළිතුර ලබාගැනීමේදී දෝෂයක් සිදු වුණා.")
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b'OK')
 
-# Thread එකක් මගින් Web Server එක සහ Bot දෙකම එකවර Run කිරීම
-if __name__ == "__main__":
-    threading.Thread(target=run_web).start()
-    bot.infinity_polling()
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b'Bot is alive!')
+                
