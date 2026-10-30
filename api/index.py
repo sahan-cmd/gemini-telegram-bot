@@ -28,8 +28,7 @@ class handler(BaseHTTPRequestHandler):
                     bot.send_chat_action(chat_id, 'typing')
 
                     try:
-                        # දිනකට Requests 1500ක් නොමිලේ ලැබෙන High-quota මාදිලිය
-                        model = genai.GenerativeModel("models/gemini-2.0-flash")
+                        model = genai.GenerativeModel("models/gemini-3.8-flash")
                         response = model.generate_content(user_text)
                         bot.send_message(chat_id, response.text)
                     except Exception as gemini_err:
