@@ -2,12 +2,11 @@ import os
 import json
 from http.server import BaseHTTPRequestHandler
 import telebot
-import google.generativeai as genai
+from google import genai
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 
-genai.configure(api_key=GEMINI_API_KEY)
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
 class handler(BaseHTTPRequestHandler):
@@ -28,11 +27,15 @@ class handler(BaseHTTPRequestHandler):
                     bot.send_chat_action(chat_id, 'typing')
 
                     try:
-                        model = genai.GenerativeModel("models/gemini-3.8-flash")
-                        response = model.generate_content(user_text)
+                        # Google එක නිල වශයෙන් ඉල්ලන නවතම gemini-3.8-flash මාදිලිය
+                        client = genai.Client(api_key=GEMINI_API_KEY)
+                        response = client.models.generate_content(
+                            model='gemini-3.8-flash',
+                            contents=user_text
+                        )
                         bot.send_message(chat_id, response.text)
-                    except Exception as gemini_err:
-                        bot.send_message(chat_id, f"⚠️ Error: {str(gemini_err)}")
+                    except Exception as err:
+                        bot.send_message(chat_id, f"⚠️ Error විස්තරය: {str(err)}")
 
         except Exception as e:
             pass
