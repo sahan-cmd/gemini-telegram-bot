@@ -27,7 +27,6 @@ class handler(BaseHTTPRequestHandler):
                     bot.send_chat_action(chat_id, 'typing')
 
                     try:
-                        # Google එක නිල වශයෙන් ඉල්ලන නවතම gemini-3.8-flash මාදිලිය
                         client = genai.Client(api_key=GEMINI_API_KEY)
                         response = client.models.generate_content(
                             model='gemini-3.8-flash',
@@ -35,7 +34,7 @@ class handler(BaseHTTPRequestHandler):
                         )
                         bot.send_message(chat_id, response.text)
                     except Exception as err:
-                        bot.send_message(chat_id, f"⚠️ Error විස්තරය: {str(err)}")
+                        bot.send_message(chat_id, f"⚠️ Error: {str(err)}")
 
         except Exception as e:
             pass
