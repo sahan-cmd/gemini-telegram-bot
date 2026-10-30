@@ -28,7 +28,6 @@ class handler(BaseHTTPRequestHandler):
                     bot.send_chat_action(chat_id, 'typing')
 
                     try:
-                        # Groq මගින් ඉතා වේගවත්ව පිළිතුරු සැපයීම (Llama 3.3 70B)
                         completion = client.chat.completions.create(
                             model="llama-3.3-70b-versatile",
                             messages=[
