@@ -27,17 +27,24 @@ class handler(BaseHTTPRequestHandler):
                     bot.send_chat_action(chat_id, 'typing')
 
                     try:
+                        # Gemini Client ආරම්භය
                         client = genai.Client(api_key=GEMINI_API_KEY)
+                        
                         response = client.models.generate_content(
                             model='gemini-3.8-flash',
                             contents=user_text
                         )
-                        bot.send_message(chat_id, response.text)
-                    except Exception as err:
-                        bot.send_message(chat_id, f"⚠️ Error: {str(err)}")
+                        
+                        if response and response.text:
+                            bot.send_message(chat_id, response.text)
+                        else:
+                            bot.send_message(chat_id, "⚠️ Gemini වෙතින් හිස් පිළිතුරක් ලැබුණි.")
 
-        except Exception as e:
-            pass
+                    except Exception as gemini_err:
+                        bot.send_message(chat_id, f"⚠️ Error: {str(gemini_err)[:300]}")
+
+        except Exception as main_err:
+            print(f"Server Error: {main_err}")
 
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
