@@ -4,13 +4,20 @@ import logging
 from http.server import BaseHTTPRequestHandler
 import telebot
 from google import genai
+from google.genai import types
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash").strip()
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
-client = genai.Client(api_key=GEMINI_API_KEY)
+client = genai.Client(
+    api_key=GEMINI_API_KEY,
+    http_options=types.HttpOptions(
+        timeout=20000,
+        retry_options=types.HttpRetryOptions(attempts=1),
+    ),
+)
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
