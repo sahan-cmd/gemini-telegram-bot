@@ -7,7 +7,7 @@ from google import genai
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash").strip()
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash").strip()
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 client = genai.Client(api_key=GEMINI_API_KEY)
@@ -30,17 +30,16 @@ class handler(BaseHTTPRequestHandler):
                     bot.send_chat_action(chat_id, 'typing')
 
                     try:
-                        response = client.models.generate_content(
+                        response = client.interactions.create(
                             model=GEMINI_MODEL,
-                            contents=user_text,
-                            config={
-                                "system_instruction": (
-                                    "You are a helpful and friendly AI assistant. "
-                                    "Always respond fluently in Sinhala if the user speaks Sinhala."
-                                )
-                            },
+                            input=user_text,
+                            system_instruction=(
+                                "You are a helpful and friendly AI assistant. "
+                                "Always respond fluently in Sinhala if the user speaks Sinhala."
+                            ),
+                            store=False,
                         )
-                        reply_text = response.text or "Gemini වෙතින් පිළිතුරක් ලැබුණේ නැහැ."
+                        reply_text = response.output_text or "Gemini වෙතින් පිළිතුරක් ලැබුණේ නැහැ."
                         bot.send_message(chat_id, reply_text)
 
                     except Exception:
