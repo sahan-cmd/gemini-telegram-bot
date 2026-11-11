@@ -1,14 +1,16 @@
 import os
 import json
+import logging
 from http.server import BaseHTTPRequestHandler
 import telebot
-from groq import Groq
+from google import genai
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash").strip()
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
-client = Groq(api_key=GROQ_API_KEY)
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -28,27 +30,28 @@ class handler(BaseHTTPRequestHandler):
                     bot.send_chat_action(chat_id, 'typing')
 
                     try:
-                        completion = client.chat.completions.create(
-                            model = "llama-3.1-8b-instant",
-                            messages=[
-                                {
-                                    "role": "system",
-                                    "content": "You are a helpful and friendly AI assistant. Always respond fluently in Sinhala if the user speaks Sinhala."
-                                },
-                                {
-                                    "role": "user",
-                                    "content": user_text
-                                }
-                            ]
+                        response = client.models.generate_content(
+                            model=GEMINI_MODEL,
+                            contents=user_text,
+                            config={
+                                "system_instruction": (
+                                    "You are a helpful and friendly AI assistant. "
+                                    "Always respond fluently in Sinhala if the user speaks Sinhala."
+                                )
+                            },
                         )
-                        reply_text = completion.choices[0].message.content
+                        reply_text = response.text or "Gemini වෙතින් පිළිතුරක් ලැබුණේ නැහැ."
                         bot.send_message(chat_id, reply_text)
 
-                    except Exception as ai_err:
-                        bot.send_message(chat_id, f"⚠️ Error: {str(ai_err)[:300]}")
+                    except Exception:
+                        logging.exception("Gemini request failed")
+                        bot.send_message(
+                            chat_id,
+                            "⚠️ Gemini වෙත සම්බන්ධ වීමේ ගැටලුවක් ඇති වුණා. ටිකකින් නැවත උත්සාහ කරන්න.",
+                        )
 
         except Exception as main_err:
-            print(f"Server Error: {main_err}")
+            logging.exception("Webhook request failed: %s", main_err)
 
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
@@ -59,4 +62,4 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
-        self.wfile.write(b'Bot is running with Groq!')
+        self.wfile.write(b'Bot is running with Gemini!')
